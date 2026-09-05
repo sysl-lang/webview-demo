@@ -1,0 +1,22 @@
+// A window, some HTML, and two functions the page can call — the shortest thing that proves
+// `sh.sysl.webview` works end to end.
+//
+// **This program exists because the package's own suite cannot open a window.** `webview_create`
+// calls `[NSApplication run]` and waits for a launch notification that never arrives in a session
+// with no window server attached, so a test that opened one would hang rather than fail. Everything
+// past `create` is proven here, by a person running it, and nowhere else.
+
+package {
+  name    = "webview-demo"
+  version = "0.1.0"
+  sysl    = "0.0.91"
+}
+
+requires {
+  heap  = true
+  posix = true
+}
+
+dependencies {
+  webview { git = "github.com/sysl-lang/webview", version = "0.1.0" }
+}

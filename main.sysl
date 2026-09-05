@@ -1,0 +1,69 @@
+import sh.sysl.webview.{webview, Hint}
+
+// The page calls `count()` and sysl answers with a number that goes up. That is the whole demo, and
+// it is deliberately the whole demo: it exercises the one thing that cannot be tested without a
+// window server — a JavaScript call arriving at a sysl closure, and its answer resolving the page's
+// promise.
+
+var clicks = 0
+
+val w = webview(debug = true).unwrap()
+
+w.title("sysl · webview").unwrap()
+w.size(560, 420, Hint.Minimum).unwrap()
+
+// **Registered before `run`**, because `run` does not return until the window has closed.
+//
+// The argument arrives as a JSON array — `"[]"` here, since the page calls it with nothing — and the
+// answer is JSON that resolves the promise. A bare number is valid JSON, which is why this one needs
+// no JSON library at all; anything richer would import `sh.sysl.json`.
+w.bind("count", (args) ->
+    clicks += 1
+
+    Ok(f"${clicks}%d")).unwrap()
+
+w.bind("quit", (args) ->
+    w.terminate().unwrap()
+
+    Ok("null")).unwrap()
+
+w.html(page()).unwrap()
+
+// Blocks until the window closes.
+w.run().unwrap()
+
+print(f"the window closed after ${clicks}%d clicks")
+
+private page() -> string = raw"""
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          :root { color-scheme: light dark; }
+          body {
+            font: 16px/1.5 -apple-system, system-ui, sans-serif;
+            display: grid; place-content: center; gap: 1rem;
+            height: 100vh; margin: 0; text-align: center;
+          }
+          output { font-size: 3rem; font-variant-numeric: tabular-nums; }
+          button { font: inherit; padding: .5rem 1.25rem; border-radius: .5rem; }
+        </style>
+      </head>
+      <body>
+        <h1>sysl &middot; webview</h1>
+        <output id="n">0</output>
+        <div>
+          <button onclick="tick()">count</button>
+          <button onclick="quit()">quit</button>
+        </div>
+        <script>
+          // `count` and `quit` are sysl closures. Both are asynchronous: what a bound function
+          // answers arrives as a resolved promise.
+          async function tick() {
+            document.getElementById("n").textContent = await count();
+          }
+        </script>
+      </body>
+    </html>
+    """
