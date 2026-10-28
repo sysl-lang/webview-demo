@@ -5,7 +5,9 @@ import sh.sysl.webview.{webview, Hint}
 // window server — a JavaScript call arriving at a sysl closure, and its answer resolving the page's
 // promise.
 
-var clicks = 0
+// A stored closure captures by value, so the count lives behind a reference: the closure and the
+// last line read the same one.
+val clicks: &int = 0
 
 val w = webview(debug = true).unwrap()
 
@@ -18,9 +20,9 @@ w.size(560, 420, Hint.Minimum).unwrap()
 // answer is JSON that resolves the promise. A bare number is valid JSON, which is why this one needs
 // no JSON library at all; anything richer would import `sh.sysl.json`.
 w.bind("count", (args) ->
-    clicks += 1
+    *clicks += 1
 
-    Ok(f"${clicks}%d")).unwrap()
+    Ok(f"${*clicks}%d")).unwrap()
 
 w.bind("quit", (args) ->
     w.terminate().unwrap()
@@ -32,7 +34,7 @@ w.html(page()).unwrap()
 // Blocks until the window closes.
 w.run().unwrap()
 
-print(f"the window closed after ${clicks}%d clicks")
+print(f"the window closed after ${*clicks}%d clicks")
 
 private page() -> string = raw"""
     <!doctype html>
